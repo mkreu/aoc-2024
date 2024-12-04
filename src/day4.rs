@@ -7,8 +7,8 @@ pub fn input_generator(input: &str) -> Input {
     Input(input.lines().map(|line| line.chars().collect()).collect())
 }
 
-#[aoc(day4, part1)]
-pub fn solve_part1(input: &Input) -> usize {
+#[aoc(day4, part1, RowBuilding)]
+pub fn solve_part1_row_building(input: &Input) -> usize {
     let mut buf = vec![];
     buf.extend(input.rows());
     buf.extend(input.columns().into_iter());
@@ -19,6 +19,48 @@ pub fn solve_part1(input: &Input) -> usize {
                 + line.iter().collect::<String>().matches("SAMX").count()
         })
         .sum()
+}
+
+#[aoc(day4, part1, Star)]
+pub fn solve_part1_star(input: &Input) -> usize {
+    let mut count = 0;
+    for i in 0..input.size() {
+        for j in 0..input.size() {
+            if input.0[i][j] == 'X' {
+                let coord = (i as isize, j as isize);
+                let dirs = [
+                    (0, 1),
+                    (1, 0),
+                    (-1, 0),
+                    (0, -1),
+                    (-1, -1),
+                    (-1, 1),
+                    (1, -1),
+                    (1, 1),
+                ];
+                count += dirs
+                    .into_iter()
+                    .filter(|dir| check_direction(input, coord, *dir))
+                    .count();
+            }
+        }
+    }
+    count
+}
+
+fn check_direction(input: &Input, center: (isize, isize), dir: (isize, isize)) -> bool {
+    if center.0 + dir.0 * 3 < 0 || center.0 + dir.0 * 3 >= input.size() as isize {
+        false
+    } else if center.1 + dir.1 * 3 < 0 || center.1 + dir.1 * 3 >= input.size() as isize {
+        false
+    } else if input.0[(center.0 + dir.0) as usize][(center.1 + dir.1) as usize] == 'M'
+        && input.0[(center.0 + dir.0 * 2) as usize][(center.1 + dir.1 * 2) as usize] == 'A'
+        && input.0[(center.0 + dir.0 * 3) as usize][(center.1 + dir.1 * 3) as usize] == 'S'
+    {
+        true
+    } else {
+        false
+    }
 }
 
 impl Input {
