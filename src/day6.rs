@@ -4,6 +4,7 @@ use std::{
 };
 
 use aoc_runner_derive::{aoc, aoc_generator};
+use rayon::iter::{ParallelBridge, ParallelIterator};
 
 #[derive(Clone, Debug)]
 pub struct Input(Vec<Vec<char>>);
@@ -72,6 +73,28 @@ pub fn solve_part2(input: &Input) -> usize {
     }
     sum
 }
+
+#[aoc(day6, part2, Mt)]
+pub fn solve_part2_mt(input: &Input) -> usize {
+    let start_row = input.0.iter().position(|row| row.contains(&'^')).unwrap();
+    let start_col = input.0[start_row].iter().position(|c| *c == '^').unwrap();
+    let start = Vec2(start_row as isize, start_col as isize);
+    let size = input.0.len() as isize;
+    (0..size)
+        .map(|row| (0..size).map(move |col| Vec2(row, col)))
+        .flatten()
+        .par_bridge()
+        .filter(|pos| {
+            let mut input = input.clone();
+            if *pos == start {
+                return false;
+            }
+            input[*pos] = '#';
+            detect_loop(&input, start)
+        })
+        .count()
+}
+
 fn detect_loop(input: &Input, start: Vec2) -> bool {
     let mut pos = start;
     let mut dir = Vec2(-1, 0);
