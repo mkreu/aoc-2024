@@ -31,9 +31,10 @@ pub fn solve_part1(input: &Input) -> usize {
                 Vec2(0, -1) => Vec2(-1, 0),
                 _ => panic!(),
             }
+        } else {
+            pos += dir;
+            input[pos] = 'X';
         }
-        pos += dir;
-        input[pos] = 'X';
 
         //println!();
         //for line in &input.0 {
@@ -57,14 +58,14 @@ pub fn solve_part2(input: &Input) -> usize {
     let size = input.0.len();
     for row in 0..size {
         for col in 0..size {
-            let mut input1 = input.clone();
+            let mut input = input.clone();
             let pos = Vec2(row as isize, col as isize);
             if pos == start {
                 continue;
             }
-            input1[pos] = '#';
-            if detect_loop(&input1, start) {
-                println!("loop detected for: {:?}", pos);
+            input[pos] = '#';
+            if detect_loop(&input, start) {
+                //println!("loop detected for: {:?}", pos);
                 sum += 1;
             }
         }
@@ -85,12 +86,12 @@ fn detect_loop(input: &Input, start: Vec2) -> bool {
                 Vec2(0, -1) => Vec2(-1, 0),
                 _ => panic!(),
             }
+        } else {
+            if !history.insert((pos, dir)) {
+                return true;
+            }
+            pos += dir;
         }
-        if history.contains(&(pos, dir)) {
-            return true;
-        }
-        history.insert((pos, dir));
-        pos += dir;
     }
     false
 }
