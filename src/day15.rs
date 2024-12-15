@@ -19,7 +19,8 @@ pub fn input_generator(input: &str) -> Input {
     let instructions = split
         .next()
         .unwrap()
-        .chars().filter(|c| *c != '\n')
+        .chars()
+        .filter(|c| *c != '\n')
         .map(|c| match c {
             '>' => Vec2(0, 1),
             '<' => Vec2(0, -1),
@@ -46,16 +47,7 @@ pub fn solve_part1(input: &Input) -> usize {
         //});
     }
 
-    let mut sum = 0;
-
-    for row in 0..map.len() {
-        for col in 0..map.0[row].len() {
-            if map.0[col][row] == 'O' {
-                sum += col * 100 + row;
-            }
-        }
-    }
-    sum
+    gps(&map)
 }
 
 fn rec1(map: &mut Map, pos: Vec2, dir: Vec2) -> bool {
@@ -77,13 +69,92 @@ fn rec1(map: &mut Map, pos: Vec2, dir: Vec2) -> bool {
 
 #[aoc(day15, part2)]
 pub fn solve_part2(input: &Input) -> usize {
-    let mut pos = robot_pos(&input.map);
-    let mut map = input.map.clone();
+    let mut map = Map(input
+        .map
+        .iter()
+        .map(|row| {
+            row.iter()
+                .flat_map(|c| match c {
+                    'O' => vec!['[', ']'],
+                    '@' => vec!['@', '.'],
+                    '.' => vec!['.', '.'],
+                    '#' => vec!['#', '#'],
+                    _ => vec![*c],
+                })
+                .collect()
+        })
+        .collect());
+    let mut pos = robot_pos(&map);
+
+    for inst in &input.instructions {
+        if rec2(&mut map, pos, *inst) {
+            pos += *inst;
+        }
+        //println!("{:?}", inst);
+        //map.iter().for_each(|row| {
+        //    println!("{}", row.iter().collect::<String>());
+        //});
+    }
+
+    map.iter().for_each(|row| {
+        println!("{}", row.iter().collect::<String>());
+    });
+
+    gps(&map)
+}
+
+fn rec2(map: &mut Map, pos: Vec2, dir: Vec2) -> bool {
+    match map[pos] {
+        '@' => {
+            if rec2(map, pos + dir, dir) {
+                map[pos + dir] = map[pos];
+                map[pos] = '.';
+                true
+            } else {
+                false
+            }
+        }
+        '[' | ']' => {
+            if dir.0 == 0 {
+                if rec2(map, pos + dir, dir) {
+                    map[pos + dir] = map[pos];
+                    map[pos] = '.';
+                    true
+                } else {
+                    false
+                }
+            } else if map[pos] == map[pos + dir] {
+                let pos2 = pos + Vec2(0, if map[pos] == '[' { 1 } else { -1 });
+                if rec2(map, pos + dir, dir) {
+                    map[pos + dir] = map[pos];
+                    map[pos2 + dir] = map[pos2];
+                    map[pos] = '.';
+                    map[pos2] = '.';
+                    true
+                } else {
+                    false
+                }
+            } else {
+                let pos2 = pos + Vec2(0, if map[pos] == '[' { 1 } else { -1 });
+                if rec2(map, pos + dir, dir) && rec2(map, pos2 + dir, dir) {
+                    map[pos + dir] = map[pos];
+                    map[pos2 + dir] = map[pos2];
+                    map[pos] = '.';
+                    map[pos2] = '.';
+                    true
+                } else {
+                    false
+                }
+            }
+        }
+        '.' => true,
+        '#' => false,
+        _ => panic!(),
+    }
 }
 
 fn robot_pos(map: &Map) -> Vec2 {
-        map
-        .iter()
+    map.iter()
         .enumerate()
         .find_map(|(y, row)| {
             row.iter().enumerate().find_map(|(x, &c)| {
@@ -95,6 +166,18 @@ fn robot_pos(map: &Map) -> Vec2 {
             })
         })
         .unwrap()
+}
+
+fn gps(map: &Map) -> usize {
+    let mut sum = 0;
+    for row in 0..map.len() {
+        for col in 0..map.0[row].len() {
+            if map.0[row][col] == 'O' || map.0[row][col] == '[' {
+                sum += row * 100 + col;
+            }
+        }
+    }
+    sum
 }
 
 #[derive(Debug, Clone)]
